@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35027.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalRChat", "SignalRChat\SignalRChat.csproj", "{FBFE2FBA-6599-4D1C-AA70-00D935CA1AAF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreLayer", "CoreLayer\CoreLayer.csproj", "{857AFD16-09A9-416C-ABCE-A7FFEB19652D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataLayer", "DataLayer\DataLayer.csproj", "{6A38722A-C769-49B9-A4FD-71408C20BFBD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FBFE2FBA-6599-4D1C-AA70-00D935CA1AAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBFE2FBA-6599-4D1C-AA70-00D935CA1AAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBFE2FBA-6599-4D1C-AA70-00D935CA1AAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBFE2FBA-6599-4D1C-AA70-00D935CA1AAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{857AFD16-09A9-416C-ABCE-A7FFEB19652D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{857AFD16-09A9-416C-ABCE-A7FFEB19652D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{857AFD16-09A9-416C-ABCE-A7FFEB19652D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{857AFD16-09A9-416C-ABCE-A7FFEB19652D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A38722A-C769-49B9-A4FD-71408C20BFBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A38722A-C769-49B9-A4FD-71408C20BFBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A38722A-C769-49B9-A4FD-71408C20BFBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A38722A-C769-49B9-A4FD-71408C20BFBD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FAE9C363-25DA-43E9-9A23-AAF348477894}
+	EndGlobalSection
+EndGlobal

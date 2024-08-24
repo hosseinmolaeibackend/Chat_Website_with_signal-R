@@ -1,0 +1,12 @@
+﻿@using CoreLayer.ViewModels.authentication
+
+
+
+<div id="register" class="auth" style="">
+    <partial name="~/Views/Shared/auth/Register.cshtml" model="new RegisterViewModel()"/>
+</div>
+
+
+<div id="login" class="auth" style="display: none;">
+    <partial name="~/Views/Shared/auth/Login.cshtml" model="new LoginViewModel()" />
+</div>
