@@ -37,7 +37,6 @@ namespace CoreLayer.Services.Chats.ChatGroups
         public async Task<ChatGroup> GetGroupBy(string token)
         {
             return await Table<ChatGroup>()
-                .Include(c=>c.Chats)
                 .FirstOrDefaultAsync(x => x.GroupToken == token);
         }
 

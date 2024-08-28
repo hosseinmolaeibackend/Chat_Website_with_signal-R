@@ -2,6 +2,7 @@
 using CoreLayer.Services.Chats.ChatGroups;
 using CoreLayer.Services.Users.UserGroups;
 using CoreLayer.Utilities;
+using CoreLayer.ViewModels.Chats;
 using DataLayer.Entities.Chats;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
@@ -26,7 +27,7 @@ namespace SignalRChat.Hubs
             return base.OnConnectedAsync();
         }
 
-        public async Task JoinGroup(string token, int currentId)
+        public async Task JoinGroup(string token, int currentGroupId)
         {
             var group = await _chatGroupService.GetGroupBy(token);
             if (group == null)
@@ -35,36 +36,53 @@ namespace SignalRChat.Hubs
             }
             else
             {
+                var chats = await _chatService.GetChats(group.Id);
                 if (!await _userGroupService.IsUserInGroup(Context.User.GetUserId(), token))
                 {
                     await _userGroupService.JoinGroup(Context.User.GetUserId(), group.Id);
                     await Clients.Caller.SendAsync("NewGroup", group.GroupTitle, group.GroupToken);
                 }
 
-                if (currentId > 0)
+                if (currentGroupId > 0)
                 {
-                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, currentId.ToString());
-
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, currentGroupId.ToString());
                 }
 
+
                 await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
-                await Clients.Group(group.Id.ToString()).SendAsync("JoinGroup", group, group.Chats);
+                await Clients.Group(group.Id.ToString()).SendAsync("JoinGroup", group, chats);
 
             }
         }
 
         public async Task SendMessage(string text, int groupId)
         {
+            var group = await _chatGroupService.GetGroupBy(groupId);
+            if (group == null)
+                return;
             var chat = new Chat()
             {
                 GroupId = groupId,
                 ChatBody = text,
                 CreateDate = DateTime.Now,
-                UserId= Context.User.GetUserId()
+                UserId = Context.User.GetUserId()
             };
             await _chatService.SendMessage(chat);
             chat.CreateDate = DateTime.Now.Date;
-            await Clients.Group(groupId.ToString()).SendAsync("ReceivedMessage", chat);
+            var chatModel = new ChatViewModel()
+            {
+                ChatBody = text,
+                CreateDate = $"{chat.CreateDate.Hour}:{chat.CreateDate.Minute}",
+                UserName = Context.User.GetUserName(),
+                UserId = Context.User.GetUserId(),
+                GroupName = group.GroupTitle,
+                GroupId = groupId,
+            };
+
+            var userIds = await _userGroupService.GetUserGroupsAsync(groupId);
+
+            await Clients.Users(userIds).SendAsync("ReceivedNotification",chatModel);
+            await Clients.Group(groupId.ToString()).SendAsync("ReceivedMessage", chatModel);
         }
     }
 }

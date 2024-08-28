@@ -14,5 +14,11 @@ namespace CoreLayer.Utilities
             var userId = principal.FindFirst(ClaimTypes.NameIdentifier).Value;
             return Convert.ToInt32(userId);
         }
+
+        public static string GetUserName(this ClaimsPrincipal? principal)
+        {
+            var userName = principal.FindFirst(ClaimTypes.Name).Value;
+            return userName;
+        }
     }
 }

@@ -11,6 +11,7 @@ namespace CoreLayer.Services.Users.UserGroups
     public interface IUserGroupService
     {
         Task<List<UserGroupViewModel>> GetUserGroups(int userId);
+        Task<List<string>> GetUserGroupsAsync(int groupId);
         Task JoinGroup(int userId,int groupId);
         Task<bool> IsUserInGroup(int userId,int groupId);
         Task<bool> IsUserInGroup(int userId, string groupToken);

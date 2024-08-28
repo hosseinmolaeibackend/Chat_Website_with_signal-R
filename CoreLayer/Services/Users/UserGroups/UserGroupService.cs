@@ -30,9 +30,17 @@ namespace CoreLayer.Services.Users.UserGroups
             return await result.ToListAsync();
         }
 
+        public async Task<List<string>> GetUserGroupsAsync(int groupId)
+        {
+            return await Table<UserGroup>()
+                .Where(x => x.groupId == groupId)
+                .Select(x => x.userId.ToString())
+                .ToListAsync();
+        }
+
         public async Task<bool> IsUserInGroup(int userId, int groupId)
         {
-            return await Table<UserGroup>().AnyAsync(x=>x.groupId == groupId && x.userId==userId);
+            return await Table<UserGroup>().AnyAsync(x => x.groupId == groupId && x.userId == userId);
         }
 
         public async Task<bool> IsUserInGroup(int userId, string groupToken)
@@ -43,12 +51,13 @@ namespace CoreLayer.Services.Users.UserGroups
 
         public async Task JoinGroup(int userId, int groupId)
         {
-            var model=new UserGroup()
+            var model = new UserGroup()
             {
                 CreateDate = DateTime.Now,
                 groupId = groupId
-                ,userId = userId,
-                
+                ,
+                userId = userId,
+
             };
             Insert(model);
             await Save();

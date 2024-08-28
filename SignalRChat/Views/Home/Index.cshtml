@@ -4,7 +4,16 @@
     ViewData["Title"] = "Home Page";
 }
 
-<!-- Modal -->
+<!-- Modal for connection timout -->
+<div id="Alert">
+    <p>Connection eroorr please wait . . .</p>
+    <div>
+        <button onclick="CloseAlert()">Close</button>
+    </div>
+</div>
+
+
+<!-- Modal for insert group -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <form class="modal-content" enctype="multipart/form-data" onsubmit="insertGroup(event)">
@@ -31,33 +40,7 @@
             <h2>علی</h2>
         </div>
         <div class="chats">
-            @*
-            <div class="chat-me">
-            <div class="chat">
-            <p>سلام خوبی چه خبر ؟ </p>
-            <span>2020/06/05</span>
-            </div>
-            </div>
-
-            <div class="chat-you">
-            <div class="chat">
-            <p>سلام ممنون یه خبر خیلییی خوبی دارم برات</p>
-            <span>2020/06/05</span>
-            </div>
-            </div>
-            <div class="chat-me">
-            <div class="chat">
-            <p>چی ؟!!</p>
-            <span>2020/06/05</span>
-            </div>
-            </div>
-            <div class="chat-you">
-            <div class="chat">
-            <p>توی سایت codeYad دوره SignalR رایگان برگزار شده</p>
-            <span>2020/06/05</span>
-            </div>
-            </div>
-            *@
+         
         </div>
         <div class="footer" style="display:none;">
             <form onsubmit="SendMessage(event)">
@@ -110,72 +93,68 @@
 
 @section Scripts {
     <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
-
     <script src="~/js/SignalRCustom.js"></script>
     <script>
-        var connection = new signalR.HubConnectionBuilder().withUrl("/chat").build();
-        var currentId = 0;
+        $(document).ready(function () {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        });
+        var currentGroupId = 0;
         var userId = 0;
+        var countNotif=0;
+
+        var connection = new signalR.HubConnectionBuilder().withUrl("/chat").build();
 
         connection.onclose(() => {
             console.log("اتصال قطع شد.");
         });
+
         connection.on("NewGroup", appendGroup);
 
-        connection.on("JoinGroup", function joines (group, chats) {
-            $(".footer").css("display", "block");
-            $(".header").css("display", "block");
-            $(".header h2").html(group.groupTitle);
-            currentId = group.id;
-            console.log(currentId);
-        });
+        connection.on("JoinGroup", joines);
 
-        connection.on("Test",function (id) {
+        connection.on("Test", function (id) {
             userId = id;
             console.log(userId);
-            });
-
-        connection.on("ReceiveMessage", function (chat) {
-            if (userId === chat.userId) {
-                console.log("پیام من:", chat.chatBody);
-                $(".chats").append(`
-                    <div class="chat-me">
-                        <div class="chat">
-                            <p>${chat.chatBody}</p>
-                            <span>0000</span>
-                        </div>
-                    </div>
-                `);
-            } else {
-                console.log("پیام شما:", chat.chatBody);
-                $(".chats").append(`
-                    <div class="chat-you">
-                        <div class="chat">
-                            <p>${chat.chatBody}</p>
-                            <span>000</span>
-                        </div>
-                    </div>
-                `);
-            }
         });
 
-        connection.start();
+        connection.on("ReceivedMessage", receive);
+        connection.on("ReceivedNotification",sendnotification);
         
+        connection.start();
 
-        function SendMessage(event) {
-            event.preventDefault();
-            var text = $("#messagetext").val();
-            if (text!=null) {
-                connection.invoke("SendMessage", text, currentId);
-            }
-            else{
-                alert("errorr");
+        function sendnotification(chat){
+                if (Notification.permission === "granted") {
+                if (currentGroupId !== chat.groupId) {
+                    var notification = new Notification(chat.groupName,
+                        {
+                            body: chat.chatBody
+                        });
+                        countNotif+=1;
+                        console.log(countNotif);
+                }
             }
         }
 
-        function JoinInGroup(token) {
-            connection.invoke("JoinGroup", token,currentId);
+        function CloseAlert() {
+            $("#Alert").fadeOut();
         }
+
+        async function Start() {
+            try {
+               
+                await connection.start();
+                
+            }
+            catch (ex) {
+                setTimeout(Start, 6000);
+                $("#Alert").fadeIn();
+            }
+        }
+        
+        connection.onclose(Start);
+       
 
     </script>
 }

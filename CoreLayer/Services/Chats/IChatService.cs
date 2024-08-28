@@ -1,4 +1,5 @@
-﻿using DataLayer.Entities.Chats;
+﻿using CoreLayer.ViewModels.Chats;
+using DataLayer.Entities.Chats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace CoreLayer.Services.Chats
     public interface IChatService
     {
         Task SendMessage(Chat _chat);
+        Task <List<ChatViewModel>> GetChats(int groupId);
     }
 }
