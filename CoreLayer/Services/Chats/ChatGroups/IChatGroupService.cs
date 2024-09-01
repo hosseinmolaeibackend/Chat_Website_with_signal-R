@@ -10,8 +10,9 @@ namespace CoreLayer.Services.Chats.ChatGroups
 {
     public interface IChatGroupService
     {
-        Task<List<SearchResultViewModel>> Search(string title);
+        Task<List<SearchResultViewModel>> Search(string title, int userId);
         public Task<List<ChatGroup>> GetChatGroups(int id);
+        public Task<ChatGroup> InsertPrivateChatGroup(int userId,int receriveId);
         public Task<ChatGroup> InsertChatGroup(CreateChatGroupViewModel model);
         public Task<ChatGroup> GetGroupBy(int id);
         public Task<ChatGroup> GetGroupBy(string token);

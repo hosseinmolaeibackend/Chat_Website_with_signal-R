@@ -11,6 +11,7 @@ namespace SignalRChat.Hubs
 {
     public class ChatHub : Hub, ICahtHub
     {
+        #region Dependency
         IChatGroupService _chatGroupService;
         IUserGroupService _userGroupService;
         IChatService _chatService;
@@ -20,7 +21,7 @@ namespace SignalRChat.Hubs
             _userGroupService = userGroupService;
             _chatService = chatService;
         }
-
+        #endregion
         public override Task OnConnectedAsync()
         {
             Clients.Caller.SendAsync("Test", Context.User.GetUserId());
@@ -30,17 +31,18 @@ namespace SignalRChat.Hubs
         public async Task JoinGroup(string token, int currentGroupId)
         {
             var group = await _chatGroupService.GetGroupBy(token);
+            var groupDto = FixGroupModel(group);
             if (group == null)
             {
                 await Clients.Caller.SendAsync("Errorr", "Group Notfound");
             }
             else
             {
-                var chats = await _chatService.GetChats(group.Id);
+                var chats = await _chatService.GetChats(groupDto.Id);
                 if (!await _userGroupService.IsUserInGroup(Context.User.GetUserId(), token))
                 {
                     await _userGroupService.JoinGroup(Context.User.GetUserId(), group.Id);
-                    await Clients.Caller.SendAsync("NewGroup", group.GroupTitle, group.GroupToken);
+                    await Clients.Caller.SendAsync("NewGroup", groupDto.GroupTitle, groupDto.GroupToken);
                 }
 
                 if (currentGroupId > 0)
@@ -50,7 +52,7 @@ namespace SignalRChat.Hubs
 
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
-                await Clients.Group(group.Id.ToString()).SendAsync("JoinGroup", group, chats);
+                await Clients.Group(group.Id.ToString()).SendAsync("JoinGroup", groupDto, chats);
 
             }
         }
@@ -81,8 +83,71 @@ namespace SignalRChat.Hubs
 
             var userIds = await _userGroupService.GetUserGroupsAsync(groupId);
 
-            await Clients.Users(userIds).SendAsync("ReceivedNotification",chatModel);
+            await Clients.Users(userIds).SendAsync("ReceivedNotification", chatModel);
             await Clients.Group(groupId.ToString()).SendAsync("ReceivedMessage", chatModel);
         }
+
+        public async Task JoinPrivateGroup(int userId, int currentGroupId)
+        {
+            if (currentGroupId > 0)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, currentGroupId.ToString());
+            }
+            var group = await _chatGroupService.InsertPrivateChatGroup(Context.User.GetUserId(), userId);
+            var groupDto = FixGroupModel(group);
+            await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
+
+            var chats = await _chatService.GetChats(group.Id);
+
+            await Clients.Caller.SendAsync("NewGroup", groupDto.GroupTitle, groupDto.GroupToken);
+            await Clients.User(groupDto.ReceiverId.ToString()).SendAsync("NewGroup", groupDto.GroupTitle, groupDto.GroupToken);
+            await Clients.Group(group.Id.ToString()).SendAsync("JoinGroup", groupDto, chats);
+        }
+
+
+        #region utils
+        private ChatGroup FixGroupModel(ChatGroup chatGroup)
+        {
+            if (chatGroup.IsPrivate)
+            {
+                if (chatGroup.OwnerId == Context.User.GetUserId())
+                {
+                    return new ChatGroup()
+                    {
+                        Id = chatGroup.Id,
+                        GroupToken = chatGroup.GroupToken,
+                        CreateDate = chatGroup.CreateDate,
+                        GroupTitle = chatGroup.Receiver.Username,
+
+                        IsPrivate = false,
+                        OwnerId = chatGroup.OwnerId,
+                        ReceiverId = chatGroup.ReceiverId
+                    };
+                }
+                return new ChatGroup()
+                {
+                    Id = chatGroup.Id,
+                    GroupToken = chatGroup.GroupToken,
+                    CreateDate = chatGroup.CreateDate,
+
+                    IsPrivate = false,
+                    OwnerId = chatGroup.OwnerId,
+                    ReceiverId = chatGroup.ReceiverId
+                };
+            }
+            return new ChatGroup()
+            {
+                Id = chatGroup.Id,
+                GroupToken = chatGroup.GroupToken,
+                CreateDate = chatGroup.CreateDate,
+                GroupTitle = chatGroup.GroupTitle,
+
+                IsPrivate = false,
+                OwnerId = chatGroup.OwnerId,
+                ReceiverId = chatGroup.ReceiverId
+
+                #endregion
+            };
+            }
     }
 }

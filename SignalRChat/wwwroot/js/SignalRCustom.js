@@ -1,4 +1,34 @@
-﻿    
+﻿$(document).ready(function () {
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+});
+var currentGroupId = 0;
+var userId = 0;
+var countNotif = 0;
+
+var connection = new signalR.HubConnectionBuilder().withUrl("/chat").build();
+
+connection.onclose(() => {
+    console.log("اتصال قطع شد.");
+});
+
+connection.on("NewGroup", appendGroup);
+
+connection.on("JoinGroup", joines);
+
+connection.on("Test", function (id) {
+    userId = id;
+    console.log(userId);
+});
+
+connection.on("ReceivedMessage", receive);
+connection.on("ReceivedNotification", sendnotification);
+
+connection.start();
+
+
+
 var myModal = $("#myModal");
 var myInput = $("#myInput");
 
@@ -21,6 +51,21 @@ function appendGroup(groupName, token) {
         }
     }
 
+function sendnotification(chat) {
+    if (Notification.permission === "granted") {
+        if (currentGroupId !== chat.groupId) {
+            var notification = new Notification(chat.groupName,
+                {
+                    body: chat.chatBody
+                });
+           
+        }
+    }
+}
+
+function CloseAlert() {
+    $("#Alert").fadeOut();
+}
 
 function joines(group, chats) {
     $(".footer").css("display", "block");
@@ -86,7 +131,7 @@ function search() {
                 for (var i in data) {
                     if (data[i].isUser) {
                         $("#search_result ul").append(`
-                                             <li onclick="JoinInGroup('${data[i].token}')">
+                                             <li onclick="joinInPrivateGroup(${data[i].token})">
                                              ${data[i].tiltle}
                                      <img src='img/Default.jpg' />
                                      <span>17:20 1400/01/15</span>
@@ -151,13 +196,12 @@ function SendMessage(event) {
     }
 }
 
-
-
 function JoinInGroup(token) {
     connection.invoke("JoinGroup", token, currentGroupId);
 }
 
-
-
+function joinInPrivateGroup(receiverId) {
+    connection.invoke("JoinPrivateGroup", receiverId, currentGroupId);
+}
 
 

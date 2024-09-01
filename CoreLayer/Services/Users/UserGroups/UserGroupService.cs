@@ -19,15 +19,51 @@ namespace CoreLayer.Services.Users.UserGroups
 
         public async Task<List<UserGroupViewModel>> GetUserGroups(int userId)
         {
-            var result = Table<UserGroup>().Include(x => x.ChatGroup.Chats)
-                .Where(g => g.userId == userId).Select(s => new UserGroupViewModel()
-                {
-                    GroupName = s.ChatGroup.GroupTitle,
-                    token = s.ChatGroup.GroupToken,
-                    LastChat = s.ChatGroup.Chats.OrderBy(s => s.CreateDate).First()
-                });
+            var result = await Table<UserGroup>()
+                .Include(x => x.ChatGroup.Chats)
+                .Include(c => c.ChatGroup.Receiver)
+                .Include(o => o.ChatGroup.User)
+                .Where(g => g.userId == userId && !g.ChatGroup.IsPrivate)
+                .ToListAsync();
+            var model= new List<UserGroupViewModel>();
 
-            return await result.ToListAsync();
+            foreach (var userGroup in result)
+            {
+                var chatGroup=userGroup.ChatGroup;
+                if (chatGroup.ReceiverId != null)
+                {
+                    if (chatGroup.ReceiverId == userId)
+                    {
+                        model.Add(new UserGroupViewModel()
+                        {
+                            GroupName = chatGroup.User.Username,
+                            token = chatGroup.GroupToken,
+                            LastChat = chatGroup.Chats.OrderByDescending(d => d.Id).FirstOrDefault()
+                        });
+                    }
+                    else
+                    {
+                        model.Add(new UserGroupViewModel()
+                        {
+                            GroupName = chatGroup.Receiver.Username,
+                            token = chatGroup.GroupToken,
+                            LastChat = chatGroup.Chats.OrderByDescending(d => d.Id).FirstOrDefault()
+                        });
+                    }
+                }
+                else
+                {
+                    model.Add(new UserGroupViewModel()
+                    {
+                        GroupName = chatGroup.GroupTitle,
+                        token = chatGroup.GroupToken,
+                        LastChat = chatGroup.Chats.OrderByDescending(d => d.Id).FirstOrDefault()
+                    });
+                }
+            }
+
+
+            return model;
         }
 
         public async Task<List<string>> GetUserGroupsAsync(int groupId)
@@ -60,6 +96,23 @@ namespace CoreLayer.Services.Users.UserGroups
 
             };
             Insert(model);
+            await Save();
+        }
+
+        public async Task JoinGroup(List<int> userIds, int groupId)
+        {
+            foreach (int userId in userIds)
+            {
+                var model = new UserGroup()
+                {
+                    CreateDate = DateTime.Now,
+                    groupId = groupId
+                   ,
+                    userId = userId,
+
+                };
+                Insert(model);
+            }
             await Save();
         }
     }

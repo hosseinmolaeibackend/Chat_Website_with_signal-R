@@ -49,9 +49,10 @@ namespace SignalRChat.Controllers
             }
         }
 
+        [Authorize]
         public async Task<IActionResult> Search(string title)
         {
-            return new ObjectResult(await _chatGroupService.Search(title));
+            return new ObjectResult(await _chatGroupService.Search(title,User.GetUserId()));
         }
        
     }

@@ -25,18 +25,25 @@ namespace CoreLayer.Services.Chats.ChatGroups
         #endregion
         public async Task<List<ChatGroup>> GetChatGroups(int id)
         {
-            return await Table<ChatGroup>().Where(i => i.OwnerId == id).OrderByDescending(i => i.CreateDate)
+            return await Table<ChatGroup>()
+                .Include(c => c.Chats)
+                .Where(i => i.OwnerId == id).OrderByDescending(i => i.CreateDate)
                 .ToListAsync();
         }
 
         public async Task<ChatGroup> GetGroupBy(int id)
         {
-            return await GetById<ChatGroup>(id);
+            return await Table<ChatGroup>()
+                .Include(c => c.Receiver)
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<ChatGroup> GetGroupBy(string token)
         {
             return await Table<ChatGroup>()
+                .Include(c => c.Receiver)
+                .Include(c => c.User)
                 .FirstOrDefaultAsync(x => x.GroupToken == token);
         }
 
@@ -55,24 +62,56 @@ namespace CoreLayer.Services.Chats.ChatGroups
             return chatGroup;
         }
 
-        public async Task<List<SearchResultViewModel>> Search(string title)
+        public async Task<ChatGroup> InsertPrivateChatGroup(int userId, int receriveId)
+        {
+            var group = await Table<ChatGroup>()
+                .Include(c => c.User)
+                .Include(f => f.Receiver)
+                .SingleOrDefaultAsync(a => (a.OwnerId == userId && a.ReceiverId == receriveId)
+                || (a.OwnerId == receriveId && a.ReceiverId == userId));
+
+            if (group == null)
+            {
+                var GroupCreated = new ChatGroup()
+                {
+                    CreateDate = DateTime.Now,
+                    GroupToken = Guid.NewGuid().ToString(),
+                    GroupTitle = $"chat with {receriveId}",
+                    OwnerId = userId,
+                    ReceiverId = receriveId,
+                    IsPrivate = true
+                };
+                Insert(GroupCreated);
+                await Save();
+                await _userGroupService.JoinGroup(new List<int>() { receriveId, userId }, GroupCreated.Id);
+                return await GetGroupBy(GroupCreated.Id);
+            }
+
+            return group;
+        }
+
+        public async Task<List<SearchResultViewModel>> Search(string title, int userId)
         {
             var result = new List<SearchResultViewModel>();
-            if(string.IsNullOrEmpty(title))
+            if (string.IsNullOrEmpty(title))
                 return result;
 
-            var groups = await Table<ChatGroup>().Where(x => x.GroupTitle.Contains(title))
-                .Select(s => new SearchResultViewModel() 
-                { Tiltle = s.GroupTitle,
+            var groups = await Table<ChatGroup>()
+                .Where(x => x.GroupTitle.Contains(title) && !x.IsPrivate)
+                .Select(s => new SearchResultViewModel()
+                {
+                    Tiltle = s.GroupTitle,
                     Token = s.GroupToken,
-                    IsUser = false 
+                    IsUser = false
                 }).ToListAsync();
 
-            var users = await Table<UserChat>().Where(x => x.Username.Contains(title))
-                .Select(s => new SearchResultViewModel() 
-                { Tiltle = s.Username,
+            var users = await Table<UserChat>()
+                .Where(x => x.Username.Contains(title) && x.Id != userId)
+                .Select(s => new SearchResultViewModel()
+                {
+                    Tiltle = s.Username,
                     Token = s.Id.ToString(),
-                    IsUser = true 
+                    IsUser = true
                 }).ToListAsync();
 
             result.AddRange(groups);

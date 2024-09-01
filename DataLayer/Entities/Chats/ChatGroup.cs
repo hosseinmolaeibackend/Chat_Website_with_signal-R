@@ -14,11 +14,17 @@ namespace DataLayer.Entities.Chats
         public string GroupToken { get; set; }
 
         public int OwnerId { get; set; }
+        public int? ReceiverId { get; set; }
+        public bool IsPrivate { get; set; }
+
 
 
         #region Relation
         [ForeignKey("OwnerId")]
         public UserChat User { get; set; }
+        [ForeignKey("ReceiverId")]
+        public UserChat Receiver { get; set; }
+
         public ICollection<Chat> Chats { get; set; }
         public ICollection<UserGroup> UserGroups { get; set; }
         #endregion
