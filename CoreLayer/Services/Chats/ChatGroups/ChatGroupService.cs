@@ -83,7 +83,6 @@ namespace CoreLayer.Services.Chats.ChatGroups
                 };
                 Insert(GroupCreated);
                 await Save();
-                await _userGroupService.JoinGroup(new List<int>() { receriveId, userId }, GroupCreated.Id);
                 return await GetGroupBy(GroupCreated.Id);
             }
 

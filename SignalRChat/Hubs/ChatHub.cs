@@ -95,12 +95,19 @@ namespace SignalRChat.Hubs
             }
             var group = await _chatGroupService.InsertPrivateChatGroup(Context.User.GetUserId(), userId);
             var groupDto = FixGroupModel(group);
+            if (!await _userGroupService.IsUserInGroup(Context.User.GetUserId(), group.GroupToken))
+            {
+                await _userGroupService.JoinGroup(new List<int>()
+                { groupDto.ReceiverId??0, group.OwnerId}, group.Id);
+
+
+                await Clients.Caller.SendAsync("NewGroup", groupDto.GroupTitle, groupDto.GroupToken);
+                await Clients.User(groupDto.ReceiverId.ToString()).SendAsync("NewGroup", Context.User.GetUserName(), groupDto.GroupToken);
+            }
             await Groups.AddToGroupAsync(Context.ConnectionId, group.Id.ToString());
 
             var chats = await _chatService.GetChats(group.Id);
 
-            await Clients.Caller.SendAsync("NewGroup", groupDto.GroupTitle, groupDto.GroupToken);
-            await Clients.User(groupDto.ReceiverId.ToString()).SendAsync("NewGroup", groupDto.GroupTitle, groupDto.GroupToken);
             await Clients.Group(group.Id.ToString()).SendAsync("JoinGroup", groupDto, chats);
         }
 
